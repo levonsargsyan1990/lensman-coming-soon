@@ -1,0 +1,58 @@
+version: 2.1
+executors:
+    docker:
+        docker:
+            - image: docker
+commands:
+    'docker-login':
+        description: "Login to docker registry"
+        steps:
+        - run: docker login -u $CI_REGISTRY_USER -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+jobs:
+    'docker-build':
+        executor: docker
+        working_directory: ~/app
+        steps:
+            - setup_remote_docker
+            - checkout
+            - docker-login
+            - run:
+                name: Building docker image
+                shell: /bin/sh
+                command: |
+                    docker build -t $IMAGE .
+                    docker tag $IMAGE "$CI_REGISTRY"/"$CI_REGISTRY_USER"/"$IMAGE"
+                    docker push "$CI_REGISTRY"/"$CI_REGISTRY_USER"/"$IMAGE":latest
+
+    'deploy-prod':
+        machine:
+            enabled: true
+        steps:
+            - add_ssh_keys:
+                fingerprints:
+                  - "3f:c4:05:bd:38:d2:cf:a4:a5:6f:e6:f1:82:c9:9e:16"
+            - run:
+                name: Start docker container
+                shell: /bin/sh
+                command: |
+                    ssh $SSH_USER@$SSH_HOST "docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY};
+                        docker stop ${IMAGE} || true && docker rm ${IMAGE} || true;
+                        docker pull ${CI_REGISTRY}/${CI_REGISTRY_USER}/${IMAGE}:latest;
+                        docker run -d -p 8000:3000 --env PORT=4000 --name ${IMAGE} ${CI_REGISTRY}/${CI_REGISTRY_USER}/${IMAGE}"
+workflows:
+    version: 2.1
+    'deploy-prod':
+        jobs:
+            - docker-build:
+                filters:
+                    branches:
+                        only: master
+
+            - deploy-prod:
+                requires:
+                  - docker-build
+                filters:
+                    branches:
+                        only: master
+                
+
