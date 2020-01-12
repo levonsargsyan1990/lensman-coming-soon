@@ -17,7 +17,7 @@ class App extends Component {
       <Formik
         validateOnChange={false}
         validateOnBlur={false}
-        initialValues={{ email: '', name: '' }}
+        initialValues={{ email: '', name: '',textArea:'' }}
         validate={(values) => {
           const errors = {};
           if (!values.name) {
@@ -38,11 +38,11 @@ class App extends Component {
           return true;
         }}
         onSubmit={({
-          name, email
+          name, email, textArea
         }, {
           setSubmitting
         }) => {
-          axios.post('/api/coming-soon/subscribe', { name, email })
+          axios.post('/api/coming-soon/subscribe', { name, email,textArea })
             .then(() => this.setState({ success: true, error: false }))
             .catch(() => this.setState({ success: false, error: true }))
             .finally(() => setSubmitting(false));
@@ -87,6 +87,15 @@ class App extends Component {
                   </Label>
                 )}
               </Form.Field>
+              <Form.Field>
+              <Form.TextArea
+                 size="huge"
+                 name='textArea'
+                 onChange={handleChange}
+                 onBlur={handleBlur}
+                 value={values.textArea}
+                 placeholder='We would love to hear more about why you are so excited about us...' />
+              </Form.Field>
               <Button
                 loading={isSubmitting}
                 size="huge"
@@ -116,3 +125,4 @@ class App extends Component {
 }
 
 export default App;
+                

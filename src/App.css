@@ -1,5 +1,8 @@
-p, input, div, button {
+p, input, div, button, textarea{
   font-family: 'Teko', sans-serif !important;
+}
+.ui.form textarea {
+    resize: none;
 }
 
 body {
